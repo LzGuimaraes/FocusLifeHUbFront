@@ -1,50 +1,47 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { jwtDecode } from "jwt-decode";
+import  api  from "../api/api"; 
 
 interface AuthContextType {
-  token: string | null;
   user: any | null;
-  login: (token: string) => void;
-  logout: () => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-function getValidTokenFromStorage(): string | null {
-  const token = localStorage.getItem("token");
-  if (!token || token === "undefined" || token === "null") {
-    localStorage.removeItem("token"); 
-    return null;
-  }
-  return token;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(getValidTokenFromStorage());
-  const [user, setUser] = useState(() => {
-    const t = getValidTokenFromStorage();
-    return t ? jwtDecode(t) : null;
-  });
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (token: string) => {
-    if (token && token !== "undefined" && token !== "null") {
-      localStorage.setItem("token", token);
-      setToken(token);
-      setUser(jwtDecode(token));
-    } else {
-      logout();
-    }
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/users/me"); 
+        setUser(res.data);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    await api.post("/auth/login", { email, password });
+    const userRes = await api.get("/users/me");
+    setUser(userRes.data);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
+  const logout = async () => {
+    await api.post("/auth/logout");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
