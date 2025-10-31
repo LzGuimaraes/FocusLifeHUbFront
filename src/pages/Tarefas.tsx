@@ -8,7 +8,6 @@ interface Tarefa {
   status: "PENDENTE" | "Ativa" | "Concluida" | "Cancelada";
   prioridade: "baixa" | "media" | "alta";
   prazo: string;
-  user_id: number;
 }
 
 interface FormData {
@@ -16,7 +15,6 @@ interface FormData {
   status: string;
   prioridade: string;
   prazo: string;
-  user_id: string;
 }
 
 export default function Tarefas() {
@@ -28,7 +26,6 @@ export default function Tarefas() {
   const [editingTarefa, setEditingTarefa] = useState<Tarefa | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [userId, setUserId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   
   const [formData, setFormData] = useState<FormData>({
@@ -36,27 +33,11 @@ export default function Tarefas() {
     status: "PENDENTE",
     prioridade: "media",
     prazo: "",
-    user_id: "",
   });
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/users/me");
-        setUserId(response.data.id);
-        setFormData(prev => ({ ...prev, user_id: response.data.id.toString() }));
-      } catch (err) {
-        console.error("Erro ao buscar usuário:", err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchTarefas();
-    }
-  }, [currentPage, userId]);
+    fetchTarefas();
+  }, [currentPage]);
 
   const fetchTarefas = async () => {
     setLoading(true);
@@ -74,8 +55,8 @@ export default function Tarefas() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.titulo.trim() || !formData.user_id) {
-      alert("Preencha todos os campos obrigatórios");
+    if (!formData.titulo.trim()) {
+      alert("Preencha o título da tarefa");
       return;
     }
 
@@ -85,7 +66,6 @@ export default function Tarefas() {
         status: formData.status,
         prioridade: formData.prioridade,
         prazo: formData.prazo ? new Date(formData.prazo).toISOString() : null,
-        user_id: parseInt(formData.user_id),
       };
 
       if (editingTarefa) {
@@ -121,7 +101,6 @@ export default function Tarefas() {
         status: tarefa.status,
         prioridade: tarefa.prioridade,
         prazo: tarefa.prazo ? new Date(tarefa.prazo).toISOString().split('T')[0] : "",
-        user_id: tarefa.user_id.toString(),
       });
     } else {
       setEditingTarefa(null);
@@ -130,7 +109,6 @@ export default function Tarefas() {
         status: "PENDENTE",
         prioridade: "media",
         prazo: "",
-        user_id: userId?.toString() || "",
       });
     }
     setShowModal(true);
