@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import  api  from "../api/api"; 
+import api from "../api/api";
 
 interface AuthContextType {
   user: any | null;
@@ -15,29 +15,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/users/me");
+      setUser(res.data);
+      return true;
+    } catch (error) {
+      setUser(null);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/users/me"); 
-        setUser(res.data);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+    const checkAuth = async () => {
+      setLoading(true);
+      await fetchUser();
+      setLoading(false);
     };
-    fetchUser();
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    await api.post("/auth/login", { email, password });
-    const userRes = await api.get("/users/me");
-    setUser(userRes.data);
+    try {
+      // Faz o login
+      await api.post("/auth/login", { email, password });
+      
+      // Busca os dados do usuário após o login
+      await fetchUser();
+    } catch (error) {
+      console.error("Erro no login:", error);
+      throw error; // Repassa o erro para ser tratado no componente
+    }
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
-    setUser(null);
+    try {
+      // Faz o logout no backend
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    } finally {
+      // Limpa o estado do usuário independentemente do resultado
+      setUser(null);
+    }
   };
 
   return (

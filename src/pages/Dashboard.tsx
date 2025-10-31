@@ -1,37 +1,22 @@
-import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import api from "../api/api";
-
-interface User {
-  id: number;
-  nome: string;
-  email: string;
-}
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function Dashboard() {
-  const { logout } = useAuth();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await api.get("/users/me");
-        setUser(response.data);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.response?.data?.message || "Erro ao buscar dados do usuário");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/auth/login");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      // Mesmo com erro, redireciona para o login
+      navigate("/auth/login");
+    }
   };
 
   const pages = [
@@ -40,23 +25,6 @@ export default function Dashboard() {
     { name: "Metas", path: "/metas", icon: "🎯", color: "#f59e0b", description: "Acompanhe seus objetivos" },
     { name: "Finanças", path: "/financas", icon: "💰", color: "#10b981", description: "Controle suas finanças" },
   ];
-
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p style={styles.loadingText}>Carregando...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={styles.errorContainer}>
-        <p style={styles.errorText}>❌ {error}</p>
-      </div>
-    );
-  }
 
   return (
     <div style={styles.container}>
@@ -70,8 +38,16 @@ export default function Dashboard() {
             <p style={styles.subtitle}>{user?.email}</p>
           </div>
         </div>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Sair
+        <button 
+          onClick={handleLogout} 
+          style={{
+            ...styles.logoutButton,
+            opacity: isLoggingOut ? 0.6 : 1,
+            cursor: isLoggingOut ? "not-allowed" : "pointer"
+          }}
+          disabled={isLoggingOut}
+        >
+          {isLoggingOut ? "Saindo..." : "Sair"}
         </button>
       </div>
 
@@ -218,43 +194,6 @@ const styles = {
     fontSize: "14px",
     color: "#64748b",
     margin: "0",
-  },
-  loadingContainer: {
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    backgroundColor: "#f8fafc",
-  },
-  spinner: {
-    width: "48px",
-    height: "48px",
-    border: "4px solid #e2e8f0",
-    borderTop: "4px solid #6366f1",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-  loadingText: {
-    marginTop: "16px",
-    fontSize: "16px",
-    color: "#64748b",
-  },
-  errorContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-    backgroundColor: "#f8fafc",
-    padding: "20px",
-  },
-  errorText: {
-    fontSize: "18px",
-    color: "#ef4444",
-    backgroundColor: "white",
-    padding: "24px 32px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
   },
 };
 
