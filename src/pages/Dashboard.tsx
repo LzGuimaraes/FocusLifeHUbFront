@@ -35,12 +35,10 @@ export default function Dashboard() {
   };
 
   const pages = [
-    { name: "Contas", path: "/contas", icon: "👤", color: "#6366f1" },
-    { name: "Estudos", path: "/estudos", icon: "📚", color: "#8b5cf6" },
-    { name: "Matérias", path: "/materias", icon: "📝", color: "#ec4899" },
-    { name: "Finanças", path: "/financas", icon: "💰", color: "#10b981" },
-    { name: "Metas", path: "/metas", icon: "🎯", color: "#f59e0b" },
-    { name: "Tarefas", path: "/tarefas", icon: "✓", color: "#06b6d4" },
+    { name: "Tarefas", path: "/tarefas", icon: "✓", color: "#06b6d4", description: "Organize suas tarefas diárias" },
+    { name: "Matérias", path: "/materias", icon: "📝", color: "#ec4899", description: "Gerencie suas matérias" },
+    { name: "Metas", path: "/metas", icon: "🎯", color: "#f59e0b", description: "Acompanhe seus objetivos" },
+    { name: "Finanças", path: "/financas", icon: "💰", color: "#10b981", description: "Controle suas finanças" },
   ];
 
   if (loading) {
@@ -101,7 +99,7 @@ export default function Dashboard() {
                 <span style={styles.iconEmoji}>{page.icon}</span>
               </div>
               <h3 style={styles.cardTitle}>{page.name}</h3>
-              <p style={styles.cardDescription}>Gerenciar {page.name.toLowerCase()}</p>
+              <p style={styles.cardDescription}>{page.description}</p>
             </a>
           ))}
         </div>
@@ -178,20 +176,25 @@ const styles = {
   },
   cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
     gap: "24px",
+    maxWidth: "1100px",
+    margin: "0 auto",
   },
   card: {
     backgroundColor: "white",
-    padding: "24px",
+    padding: "32px 24px",
     borderRadius: "12px",
     textDecoration: "none",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     display: "flex",
     flexDirection: "column" as const,
-    alignItems: "flex-start",
+    alignItems: "center",
+    textAlign: "center" as const,
     cursor: "pointer",
+    minHeight: "200px",
+    justifyContent: "center",
   },
   cardIcon: {
     width: "48px",
@@ -254,7 +257,6 @@ const styles = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
   },
 };
-
 
 const globalStyles = `
 @keyframes spin {

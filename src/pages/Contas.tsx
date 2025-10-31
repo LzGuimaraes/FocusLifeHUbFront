@@ -2,146 +2,183 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 
+interface Conta {
+  id: number;
+  nome: string;
+  tipo: string;
+  saldo: number;
+  financas_id: number;
+}
+
 interface Financa {
   id: number;
   nome: string;
   moeda: string;
-  user_id: number;
 }
 
 interface FormData {
   nome: string;
-  moeda: string;
+  tipo: string;
+  financas_id: string;
+  saldo: string;
 }
 
-interface Currency {
-  code: string;
-  symbol: string;
-  name: string;
-}
-
-export default function Financas() {
+export default function Contas() {
   const navigate = useNavigate();
+  const [contas, setContas] = useState<Conta[]>([]);
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingFinanca, setEditingFinanca] = useState<Financa | null>(null);
+  const [editingConta, setEditingConta] = useState<Conta | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [selectedFinanca, setSelectedFinanca] = useState<string>("all");
   
   const [formData, setFormData] = useState<FormData>({
     nome: "",
-    moeda: "BRL",
+    tipo: "Despesa",
+    financas_id: "",
+    saldo: "0",
   });
 
+  // Busca as finanças disponíveis
   useEffect(() => {
-    const fetchUserId = async () => {
+    const fetchFinancas = async () => {
       try {
-        const response = await api.get("/users/me");
-        setUserId(response.data.id);
+        const response = await api.get("/financas/all?page=0&size=100");
+        setFinancas(response.data.content);
       } catch (err: any) {
-        console.error("Erro ao buscar ID do usuário:", err);
+        console.error("Erro ao buscar finanças:", err);
       }
     };
-    fetchUserId();
+    fetchFinancas();
   }, []);
 
-  // Busca as finanças
+  // Busca as contas
   useEffect(() => {
-    if (userId) {
-      fetchFinancas();
-    }
-  }, [userId, currentPage]);
+    fetchContas();
+  }, [currentPage, selectedFinanca]);
 
-  const fetchFinancas = async () => {
+  const fetchContas = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/financas/all?page=${currentPage}&size=6`);
-      setFinancas(response.data.content);
-      setTotalPages(response.data.totalPages);
+      if (selectedFinanca === "all") {
+        const response = await api.get(`/contas/all?page=${currentPage}&size=6`);
+        setContas(response.data.content);
+        setTotalPages(response.data.totalPages);
+      } else {
+        const response = await api.get(`/contas/by-financa/${selectedFinanca}`);
+        setContas(response.data);
+        setTotalPages(1);
+      }
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Erro ao buscar finanças");
+      console.error("Erro ao buscar contas:", err);
+      setError(err.response?.data?.message || "Erro ao buscar contas");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!formData.nome.trim()) {
-      alert("O nome é obrigatório");
+    if (!formData.nome.trim() || !formData.tipo.trim() || !formData.financas_id) {
+      alert("Preencha todos os campos obrigatórios");
       return;
     }
 
     try {
       const payload = {
-        ...formData,
-        user_id: userId,
+        nome: formData.nome,
+        tipo: formData.tipo,
+        financas_id: parseInt(formData.financas_id),
+        saldo: formData.saldo ? parseFloat(formData.saldo) : 0,
       };
 
-      if (editingFinanca) {
-        await api.put(`/financas/alter/${editingFinanca.id}`, payload);
+      console.log("Payload enviado:", payload);
+
+      if (editingConta) {
+        await api.put(`/contas/alter/${editingConta.id}`, payload);
       } else {
-        await api.post("/financas/create", payload);
+        await api.post("/contas/create", payload);
       }
 
-      await fetchFinancas();
+      await fetchContas();
       closeModal();
     } catch (err: any) {
-      alert("Erro: " + (err.response?.data?.message || "Erro ao salvar finança"));
+      console.error("Erro completo:", err);
+      console.error("Response data:", err.response?.data);
+      alert("Erro: " + (err.response?.data?.message || err.message || "Erro ao salvar conta"));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Deseja realmente excluir esta conta financeira?")) return;
+    if (!confirm("Deseja realmente excluir esta conta?")) return;
 
     try {
-      await api.delete(`/financas/delete/${id}`);
-      await fetchFinancas();
+      await api.delete(`/contas/delete/${id}`);
+      await fetchContas();
     } catch (err: any) {
-      alert("Erro: " + (err.response?.data?.message || "Erro ao deletar finança"));
+      alert("Erro: " + (err.response?.data?.message || "Erro ao deletar conta"));
     }
   };
 
-  const openModal = (financa: Financa | null = null) => {
-    if (financa) {
-      setEditingFinanca(financa);
+  const openModal = (conta: Conta | null = null) => {
+    if (conta) {
+      setEditingConta(conta);
       setFormData({
-        nome: financa.nome,
-        moeda: financa.moeda,
+        nome: conta.nome,
+        tipo: conta.tipo,
+        financas_id: conta.financas_id.toString(),
+        saldo: conta.saldo.toString(),
       });
     } else {
-      setEditingFinanca(null);
-      setFormData({ nome: "", moeda: "BRL" });
+      setEditingConta(null);
+      setFormData({
+        nome: "",
+        tipo: "Despesa",
+        financas_id: financas.length > 0 ? financas[0].id.toString() : "",
+        saldo: "0",
+      });
     }
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setEditingFinanca(null);
-    setFormData({ nome: "", moeda: "BRL" });
+    setEditingConta(null);
+    setFormData({
+      nome: "",
+      tipo: "Despesa",
+      financas_id: "",
+      saldo: "0",
+    });
   };
 
-  const currencies: Currency[] = [
-    { code: "BRL", symbol: "R$", name: "Real Brasileiro" },
-    { code: "USD", symbol: "$", name: "Dólar Americano" },
-    { code: "EUR", symbol: "€", name: "Euro" },
-    { code: "GBP", symbol: "£", name: "Libra Esterlina" },
-    { code: "JPY", symbol: "¥", name: "Iene Japonês" },
-  ];
-
-  const getCurrencySymbol = (code: string): string => {
-    return currencies.find((c) => c.code === code)?.symbol || code;
+  const getFinancaNome = (financas_id: number): string => {
+    return financas.find((f) => f.id === financas_id)?.nome || "N/A";
   };
 
-  if (loading && financas.length === 0) {
+  const getFinancaMoeda = (financas_id: number): string => {
+    return financas.find((f) => f.id === financas_id)?.moeda || "BRL";
+  };
+
+  const formatCurrency = (value: number, moeda: string): string => {
+    const symbols: { [key: string]: string } = {
+      BRL: "R$",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      JPY: "¥",
+    };
+    return `${symbols[moeda] || moeda} ${value.toFixed(2)}`;
+  };
+
+  if (loading && contas.length === 0) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={styles.loadingText}>Carregando finanças...</p>
+        <p style={styles.loadingText}>Carregando contas...</p>
       </div>
     );
   }
@@ -164,27 +201,13 @@ export default function Financas() {
             ← Voltar
           </button>
           <div>
-            <h1 style={styles.title}>💰 Gestão Financeira</h1>
-            <p style={styles.subtitle}>Gerencie suas contas e carteiras</p>
+            <h1 style={styles.title}>💳 Gestão de Contas</h1>
+            <p style={styles.subtitle}>Gerencie suas contas bancárias</p>
           </div>
         </div>
-        <div style={styles.headerActions}>
-          <button 
-            onClick={() => navigate("/contas")} 
-            style={styles.contasButton}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#0891b2";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#06b6d4";
-            }}
-          >
-            📋 Contas
-          </button>
-          <button onClick={() => openModal()} style={styles.addButton}>
-            + Nova Conta
-          </button>
-        </div>
+        <button onClick={() => openModal()} style={styles.addButton}>
+          + Nova Conta
+        </button>
       </div>
 
       {/* Error Message */}
@@ -194,36 +217,89 @@ export default function Financas() {
         </div>
       )}
 
+      {/* Filter */}
+      <div style={styles.filterContainer}>
+        <label style={styles.filterLabel}>Filtrar por Carteira:</label>
+        <select
+          value={selectedFinanca}
+          onChange={(e) => {
+            setSelectedFinanca(e.target.value);
+            setCurrentPage(0);
+          }}
+          style={styles.filterSelect}
+        >
+          <option value="all">Todas as Carteiras</option>
+          {financas.map((financa) => (
+            <option key={financa.id} value={financa.id}>
+              {financa.nome} ({financa.moeda})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Cards Grid */}
       <div style={styles.content}>
-        {financas.length === 0 ? (
+        {contas.length === 0 ? (
           <div style={styles.emptyState}>
             <span style={styles.emptyIcon}>📊</span>
-            <h3 style={styles.emptyTitle}>Nenhuma carteira cadastrada</h3>
+            <h3 style={styles.emptyTitle}>Nenhuma conta cadastrada</h3>
             <p style={styles.emptyText}>
-              Comece criando sua primeira carteira financeira
+              Comece criando sua primeira conta bancária
             </p>
             <button onClick={() => openModal()} style={styles.emptyButton}>
-              Criar primeira carteira
+              Criar primeira conta
             </button>
           </div>
         ) : (
           <div style={styles.cardsGrid}>
-            {financas.map((financa) => (
-              <div key={financa.id} style={styles.card}>
+            {contas.map((conta) => (
+              <div 
+                key={conta.id} 
+                style={{
+                  ...styles.card,
+                  borderLeft: `4px solid #6366f1`,
+                }}
+              >
                 <div style={styles.cardHeader}>
-                  <div style={styles.currencyBadge}>
-                    {getCurrencySymbol(financa.moeda)}
+                  <div
+                    style={{
+                      ...styles.tipoBadge,
+                      backgroundColor: "#6366f115",
+                      color: "#6366f1",
+                    }}
+                  >
+                    {conta.tipo}
                   </div>
-                  <span style={styles.cardId}>#{financa.id}</span>
+                  <span style={styles.cardId}>#{conta.id}</span>
                 </div>
                 
-                <h3 style={styles.cardTitle}>{financa.nome}</h3>
-                <p style={styles.cardCurrency}>Moeda: {financa.moeda}</p>
+                <h3 style={styles.cardTitle}>{conta.nome}</h3>
+                
+                <div style={styles.cardInfo}>
+                  <div style={styles.infoItem}>
+                    <span style={styles.infoLabel}>Saldo:</span>
+                    <span style={{
+                      ...styles.infoValue,
+                      color: conta.saldo >= 0 ? "#10b981" : "#ef4444",
+                      fontWeight: "700",
+                      fontSize: "18px",
+                    }}>
+                      {formatCurrency(conta.saldo, getFinancaMoeda(conta.financas_id))}
+                    </span>
+                  </div>
+                  <div style={styles.infoItem}>
+                    <span style={styles.infoLabel}>Tipo:</span>
+                    <span style={styles.infoValue}>{conta.tipo}</span>
+                  </div>
+                  <div style={styles.infoItem}>
+                    <span style={styles.infoLabel}>Carteira:</span>
+                    <span style={styles.infoValue}>{getFinancaNome(conta.financas_id)}</span>
+                  </div>
+                </div>
 
                 <div style={styles.cardActions}>
                   <button
-                    onClick={() => openModal(financa)}
+                    onClick={() => openModal(conta)}
                     style={styles.editButton}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = "#3b82f6";
@@ -235,7 +311,7 @@ export default function Financas() {
                     ✏️ Editar
                   </button>
                   <button
-                    onClick={() => handleDelete(financa.id)}
+                    onClick={() => handleDelete(conta.id)}
                     style={styles.deleteButton}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = "#dc2626";
@@ -253,7 +329,7 @@ export default function Financas() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {totalPages > 1 && selectedFinanca === "all" && (
           <div style={styles.pagination}>
             <button
               onClick={() => setCurrentPage(currentPage - 1)}
@@ -290,7 +366,7 @@ export default function Financas() {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
-                {editingFinanca ? "Editar Carteira" : "Nova Carteira"}
+                {editingConta ? "Editar Conta" : "Nova Conta"}
               </h2>
               <button onClick={closeModal} style={styles.closeButton}>
                 ✕
@@ -299,30 +375,62 @@ export default function Financas() {
 
             <div style={styles.form}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Nome da Carteira *</label>
+                <label style={styles.label}>Nome da Conta *</label>
                 <input
                   type="text"
                   value={formData.nome}
                   onChange={(e) =>
                     setFormData({ ...formData, nome: e.target.value })
                   }
-                  placeholder="Ex: Carteira Principal, Poupança, Investimentos"
+                  placeholder="Ex: Conta Corrente, Cartão de Crédito"
                   style={styles.input}
                 />
               </div>
 
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Tipo de Conta *</label>
+                  <select
+                    value={formData.tipo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tipo: e.target.value })
+                    }
+                    style={styles.select}
+                  >
+                    <option value="Despesa">Despesa</option>
+                    <option value="Saldo">Saldo</option>
+                    <option value="Receita">Receita</option>
+                  </select>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Saldo Inicial</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.saldo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, saldo: e.target.value })
+                    }
+                    placeholder="0.00"
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+
               <div style={styles.formGroup}>
-                <label style={styles.label}>Moeda *</label>
+                <label style={styles.label}>Carteira *</label>
                 <select
-                  value={formData.moeda}
+                  value={formData.financas_id}
                   onChange={(e) =>
-                    setFormData({ ...formData, moeda: e.target.value })
+                    setFormData({ ...formData, financas_id: e.target.value })
                   }
                   style={styles.select}
                 >
-                  {currencies.map((currency) => (
-                    <option key={currency.code} value={currency.code}>
-                      {currency.symbol} - {currency.name} ({currency.code})
+                  <option value="">Selecione...</option>
+                  {financas.map((financa) => (
+                    <option key={financa.id} value={financa.id}>
+                      {financa.nome} ({financa.moeda})
                     </option>
                   ))}
                 </select>
@@ -336,7 +444,7 @@ export default function Financas() {
                   Cancelar
                 </button>
                 <button onClick={handleSubmit} style={styles.submitButton}>
-                  {editingFinanca ? "Salvar Alterações" : "Criar Carteira"}
+                  {editingConta ? "Salvar Alterações" : "Criar Conta"}
                 </button>
               </div>
             </div>
@@ -369,11 +477,6 @@ const styles = {
     gap: "16px",
     flexWrap: "wrap" as const,
   },
-  headerActions: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap" as const,
-  },
   backButton: {
     padding: "8px 16px",
     fontSize: "14px",
@@ -384,33 +487,6 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.2s",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  contasButton: {
-    padding: "12px 20px",
-    fontSize: "14px",
-    fontWeight: "600",
-    backgroundColor: "#06b6d4",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    whiteSpace: "nowrap" as const,
-  },
-  addButton: {
-    padding: "12px 24px",
-    fontSize: "14px",
-    fontWeight: "600",
-    backgroundColor: "#10b981",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    whiteSpace: "nowrap" as const,
   },
   title: {
     fontSize: "24px",
@@ -423,6 +499,41 @@ const styles = {
     color: "#64748b",
     margin: "0",
   },
+  addButton: {
+    padding: "12px 24px",
+    fontSize: "14px",
+    fontWeight: "600",
+    backgroundColor: "#6366f1",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    whiteSpace: "nowrap" as const,
+  },
+  filterContainer: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "20px 16px 0",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap" as const,
+  },
+  filterLabel: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#1e293b",
+  },
+  filterSelect: {
+    padding: "10px 16px",
+    fontSize: "14px",
+    border: "2px solid #e2e8f0",
+    borderRadius: "8px",
+    backgroundColor: "white",
+    cursor: "pointer",
+    minWidth: "200px",
+  },
   content: {
     maxWidth: "1200px",
     margin: "0 auto",
@@ -430,7 +541,7 @@ const styles = {
   },
   cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
     gap: "20px",
     marginBottom: "32px",
   },
@@ -447,13 +558,11 @@ const styles = {
     alignItems: "center",
     marginBottom: "16px",
   },
-  currencyBadge: {
-    backgroundColor: "#10b98115",
-    color: "#10b981",
-    padding: "8px 16px",
+  tipoBadge: {
+    padding: "6px 12px",
     borderRadius: "8px",
-    fontSize: "20px",
-    fontWeight: "700",
+    fontSize: "13px",
+    fontWeight: "600",
   },
   cardId: {
     fontSize: "12px",
@@ -466,10 +575,33 @@ const styles = {
     color: "#1e293b",
     margin: "0 0 8px 0",
   },
-  cardCurrency: {
+  cardDescription: {
     fontSize: "14px",
     color: "#64748b",
-    margin: "0 0 20px 0",
+    margin: "0 0 16px 0",
+  },
+  cardInfo: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "10px",
+    marginBottom: "20px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e2e8f0",
+  },
+  infoItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  infoLabel: {
+    fontSize: "13px",
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: "14px",
+    color: "#1e293b",
+    fontWeight: "600",
   },
   cardActions: {
     display: "flex",
@@ -547,7 +679,7 @@ const styles = {
     backgroundColor: "white",
     borderRadius: "16px",
     width: "100%",
-    maxWidth: "500px",
+    maxWidth: "600px",
     maxHeight: "90vh",
     overflow: "auto",
   },
@@ -579,6 +711,12 @@ const styles = {
   },
   formGroup: {
     marginBottom: "20px",
+    flex: 1,
+  },
+  formRow: {
+    display: "flex",
+    gap: "16px",
+    flexWrap: "wrap" as const,
   },
   label: {
     display: "block",
@@ -596,6 +734,18 @@ const styles = {
     outline: "none",
     transition: "all 0.2s",
     boxSizing: "border-box" as const,
+  },
+  textarea: {
+    width: "100%",
+    padding: "12px",
+    fontSize: "14px",
+    border: "2px solid #e2e8f0",
+    borderRadius: "8px",
+    outline: "none",
+    transition: "all 0.2s",
+    boxSizing: "border-box" as const,
+    resize: "vertical" as const,
+    fontFamily: "inherit",
   },
   select: {
     width: "100%",
@@ -634,7 +784,7 @@ const styles = {
     padding: "12px",
     fontSize: "14px",
     fontWeight: "600",
-    backgroundColor: "#10b981",
+    backgroundColor: "#6366f1",
     color: "white",
     border: "none",
     borderRadius: "8px",
@@ -653,7 +803,7 @@ const styles = {
     width: "48px",
     height: "48px",
     border: "4px solid #e2e8f0",
-    borderTop: "4px solid #10b981",
+    borderTop: "4px solid #6366f1",
     borderRadius: "50%",
     animation: "spin 1s linear infinite",
   },
@@ -697,7 +847,7 @@ const styles = {
     padding: "12px 24px",
     fontSize: "14px",
     fontWeight: "600",
-    backgroundColor: "#10b981",
+    backgroundColor: "#6366f1",
     color: "white",
     border: "none",
     borderRadius: "8px",
@@ -711,15 +861,6 @@ if (typeof document !== 'undefined') {
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
-    }
-    
-    @media (max-width: 768px) {
-      .header {
-        padding: 16px !important;
-      }
-      .content {
-        padding: 20px 16px !important;
-      }
     }
   `;
   document.head.appendChild(styleTag);
