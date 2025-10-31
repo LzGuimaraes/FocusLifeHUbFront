@@ -14,7 +14,6 @@ export default function Dashboard() {
       navigate("/auth/login");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
-      // Mesmo com erro, redireciona para o login
       navigate("/auth/login");
     }
   };
@@ -55,9 +54,9 @@ export default function Dashboard() {
         <h2 style={styles.sectionTitle}>Acesso Rápido</h2>
         <div style={styles.cardsGrid}>
           {pages.map((page) => (
-            <a
+            <div
               key={page.path}
-              href={page.path}
+              onClick={() => navigate(page.path)}
               style={{
                 ...styles.card,
                 borderTop: `4px solid ${page.color}`,
@@ -76,7 +75,7 @@ export default function Dashboard() {
               </div>
               <h3 style={styles.cardTitle}>{page.name}</h3>
               <p style={styles.cardDescription}>{page.description}</p>
-            </a>
+            </div>
           ))}
         </div>
       </div>
@@ -161,7 +160,6 @@ const styles = {
     backgroundColor: "white",
     padding: "32px 24px",
     borderRadius: "12px",
-    textDecoration: "none",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     display: "flex",

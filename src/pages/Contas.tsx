@@ -42,7 +42,6 @@ export default function Contas() {
     saldo: "0",
   });
 
-  // Busca as finanças disponíveis
   useEffect(() => {
     const fetchFinancas = async () => {
       try {
@@ -55,7 +54,6 @@ export default function Contas() {
     fetchFinancas();
   }, []);
 
-  // Busca as contas
   useEffect(() => {
     fetchContas();
   }, [currentPage, selectedFinanca]);
@@ -95,8 +93,6 @@ export default function Contas() {
         saldo: formData.saldo ? parseFloat(formData.saldo) : 0,
       };
 
-      console.log("Payload enviado:", payload);
-
       if (editingConta) {
         await api.put(`/contas/alter/${editingConta.id}`, payload);
       } else {
@@ -107,7 +103,6 @@ export default function Contas() {
       closeModal();
     } catch (err: any) {
       console.error("Erro completo:", err);
-      console.error("Response data:", err.response?.data);
       alert("Erro: " + (err.response?.data?.message || err.message || "Erro ao salvar conta"));
     }
   };
@@ -185,7 +180,6 @@ export default function Contas() {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <button 
@@ -210,14 +204,12 @@ export default function Contas() {
         </button>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div style={styles.errorBanner}>
           ❌ {error}
         </div>
       )}
 
-      {/* Filter */}
       <div style={styles.filterContainer}>
         <label style={styles.filterLabel}>Filtrar por Carteira:</label>
         <select
@@ -237,7 +229,6 @@ export default function Contas() {
         </select>
       </div>
 
-      {/* Cards Grid */}
       <div style={styles.content}>
         {contas.length === 0 ? (
           <div style={styles.emptyState}>
@@ -328,7 +319,6 @@ export default function Contas() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && selectedFinanca === "all" && (
           <div style={styles.pagination}>
             <button
@@ -360,7 +350,6 @@ export default function Contas() {
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div style={styles.modalOverlay} onClick={closeModal}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -575,11 +564,6 @@ const styles = {
     color: "#1e293b",
     margin: "0 0 8px 0",
   },
-  cardDescription: {
-    fontSize: "14px",
-    color: "#64748b",
-    margin: "0 0 16px 0",
-  },
   cardInfo: {
     display: "flex",
     flexDirection: "column" as const,
@@ -734,18 +718,6 @@ const styles = {
     outline: "none",
     transition: "all 0.2s",
     boxSizing: "border-box" as const,
-  },
-  textarea: {
-    width: "100%",
-    padding: "12px",
-    fontSize: "14px",
-    border: "2px solid #e2e8f0",
-    borderRadius: "8px",
-    outline: "none",
-    transition: "all 0.2s",
-    boxSizing: "border-box" as const,
-    resize: "vertical" as const,
-    fontFamily: "inherit",
   },
   select: {
     width: "100%",
