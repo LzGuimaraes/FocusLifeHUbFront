@@ -18,7 +18,6 @@ interface FormData {
   prograsso: string;
   prazo: string;
   status: string;
-  user_id: string;
 }
 
 export default function Metas() {
@@ -30,7 +29,6 @@ export default function Metas() {
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [userId, setUserId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   
   const [formData, setFormData] = useState<FormData>({
@@ -39,27 +37,11 @@ export default function Metas() {
     prograsso: "0",
     prazo: "",
     status: "PENDENTE",
-    user_id: "",
   });
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/users/me");
-        setUserId(response.data.id);
-        setFormData(prev => ({ ...prev, user_id: response.data.id.toString() }));
-      } catch (err) {
-        console.error("Erro ao buscar usuário:", err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchMetas();
-    }
-  }, [currentPage, userId]);
+    fetchMetas();
+  }, [currentPage]);
 
   const fetchMetas = async () => {
     setLoading(true);
@@ -77,7 +59,7 @@ export default function Metas() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.titulo.trim() || !formData.prazo || !formData.user_id) {
+    if (!formData.titulo.trim() || !formData.prazo) {
       alert("Preencha todos os campos obrigatórios");
       return;
     }
@@ -89,7 +71,6 @@ export default function Metas() {
         prograsso: parseFloat(formData.prograsso),
         prazo: new Date(formData.prazo).toISOString(),
         status: formData.status,
-        user_id: parseInt(formData.user_id),
       };
 
       if (editingMeta) {
@@ -126,7 +107,6 @@ export default function Metas() {
         prograsso: meta.prograsso.toString(),
         prazo: meta.prazo ? new Date(meta.prazo).toISOString().split('T')[0] : "",
         status: meta.status,
-        user_id: meta.user_id.toString(),
       });
     } else {
       setEditingMeta(null);
@@ -136,7 +116,6 @@ export default function Metas() {
         prograsso: "0",
         prazo: "",
         status: "PENDENTE",
-        user_id: userId?.toString() || "",
       });
     }
     setShowModal(true);
@@ -145,6 +124,13 @@ export default function Metas() {
   const closeModal = () => {
     setShowModal(false);
     setEditingMeta(null);
+    setFormData({
+      titulo: "",
+      descricao: "",
+      prograsso: "0",
+      prazo: "",
+      status: "PENDENTE",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -188,6 +174,12 @@ export default function Metas() {
           <button 
             onClick={() => navigate("/dashboard")} 
             style={styles.backButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#f1f5f9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             ← Voltar
           </button>
@@ -292,12 +284,24 @@ export default function Metas() {
                     <button
                       onClick={() => openModal(meta)}
                       style={styles.editButton}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#4f46e5";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "#6366f1";
+                      }}
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={() => handleDelete(meta.id)}
                       style={styles.deleteButton}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#dc2626";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "#ef4444";
+                      }}
                     >
                       🗑️ Excluir
                     </button>

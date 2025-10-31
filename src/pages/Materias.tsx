@@ -20,7 +20,6 @@ interface Materia {
 interface FormData {
   nome: string;
   descricao: string;
-  user_id: string;
 }
 
 export default function Materias() {
@@ -32,32 +31,15 @@ export default function Materias() {
   const [editingMateria, setEditingMateria] = useState<Materia | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [userId, setUserId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     nome: "",
     descricao: "",
-    user_id: "",
   });
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/users/me");
-        setUserId(response.data.id);
-        setFormData(prev => ({ ...prev, user_id: response.data.id.toString() }));
-      } catch (err) {
-        console.error("Erro ao buscar usuário:", err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchMaterias();
-    }
-  }, [currentPage, userId]);
+    fetchMaterias();
+  }, [currentPage]);
 
   const fetchMaterias = async () => {
     setLoading(true);
@@ -75,8 +57,8 @@ export default function Materias() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.nome.trim() || !formData.user_id) {
-      alert("Preencha todos os campos obrigatórios");
+    if (!formData.nome.trim()) {
+      alert("Preencha o nome da matéria");
       return;
     }
 
@@ -84,7 +66,6 @@ export default function Materias() {
       const payload = {
         nome: formData.nome,
         descricao: formData.descricao,
-        user_id: parseInt(formData.user_id),
       };
 
       if (editingMateria) {
@@ -118,14 +99,12 @@ export default function Materias() {
       setFormData({
         nome: materia.nome,
         descricao: materia.descricao,
-        user_id: materia.userId.toString(),
       });
     } else {
       setEditingMateria(null);
       setFormData({
         nome: "",
         descricao: "",
-        user_id: userId?.toString() || "",
       });
     }
     setShowModal(true);
@@ -134,6 +113,10 @@ export default function Materias() {
   const closeModal = () => {
     setShowModal(false);
     setEditingMateria(null);
+    setFormData({
+      nome: "",
+      descricao: "",
+    });
   };
 
   const getTotalHoras = (estudos: any[]) => {
@@ -159,6 +142,12 @@ export default function Materias() {
           <button 
             onClick={() => navigate("/dashboard")} 
             style={styles.backButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#f1f5f9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             ← Voltar
           </button>
@@ -232,12 +221,24 @@ export default function Materias() {
                   <button
                     onClick={() => openModal(materia)}
                     style={styles.editButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#4f46e5";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#6366f1";
+                    }}
                   >
                     ✏️ Editar
                   </button>
                   <button
                     onClick={() => handleDelete(materia.id)}
                     style={styles.deleteButton}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#dc2626";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#ef4444";
+                    }}
                   >
                     🗑️ Excluir
                   </button>

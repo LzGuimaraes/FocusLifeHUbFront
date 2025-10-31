@@ -12,7 +12,6 @@ interface Financa {
 interface FormData {
   nome: string;
   moeda: string;
-  user_id: string;
 }
 
 export default function Financas() {
@@ -24,32 +23,15 @@ export default function Financas() {
   const [editingFinanca, setEditingFinanca] = useState<Financa | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [userId, setUserId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     nome: "",
     moeda: "BRL",
-    user_id: "",
   });
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/users/me");
-        setUserId(response.data.id);
-        setFormData(prev => ({ ...prev, user_id: response.data.id.toString() }));
-      } catch (err) {
-        console.error("Erro ao buscar usuário:", err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchFinancas();
-    }
-  }, [currentPage, userId]);
+    fetchFinancas();
+  }, [currentPage]);
 
   const fetchFinancas = async () => {
     setLoading(true);
@@ -67,7 +49,7 @@ export default function Financas() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.nome.trim() || !formData.moeda.trim() || !formData.user_id) {
+    if (!formData.nome.trim() || !formData.moeda.trim()) {
       alert("Preencha todos os campos obrigatórios");
       return;
     }
@@ -76,7 +58,6 @@ export default function Financas() {
       const payload = {
         nome: formData.nome,
         moeda: formData.moeda.toUpperCase(),
-        user_id: parseInt(formData.user_id),
       };
 
       if (editingFinanca) {
@@ -110,14 +91,12 @@ export default function Financas() {
       setFormData({
         nome: financa.nome,
         moeda: financa.moeda,
-        user_id: financa.user_id.toString(),
       });
     } else {
       setEditingFinanca(null);
       setFormData({
         nome: "",
         moeda: "BRL",
-        user_id: userId?.toString() || "",
       });
     }
     setShowModal(true);
@@ -129,7 +108,6 @@ export default function Financas() {
     setFormData({
       nome: "",
       moeda: "BRL",
-      user_id: userId?.toString() || "",
     });
   };
 
