@@ -151,9 +151,9 @@ const styles = {
   },
   cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: "24px",
-    maxWidth: "1100px",
+    maxWidth: "900px",
     margin: "0 auto",
   },
   card: {
