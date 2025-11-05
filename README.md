@@ -1,74 +1,63 @@
-# React + TypeScript + Vite
+# FocusLifeHubFront
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend do projeto FocusLifeHub, desenvolvido como uma SPA (Single Page Application) usando React + TypeScript e empacotado com Vite. O roteamento é feito com React Router e o fluxo de autenticação utiliza contexto e JWT.
 
-Currently, two official plugins are available:
+## Tecnologias
+- React 19 (react, react-dom)
+- Vite 7
+- TypeScript 5.9
+- React Router DOM 7
+- Axios
+- jwt-decode
+- ESLint e plugins (hooks/refresh)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Estrutura de Pastas
+- `src/main.tsx`: ponto de entrada da aplicação
+- `src/App.tsx`: layout, composição e organização de rotas
+- `src/pages/`: páginas da aplicação
+- `src/auth/AuthProvider.tsx`: provedor de autenticação via contexto
+- `src/auth/PrivateRoute.tsx`: componente para proteger rotas
+- `src/api/api.ts`: cliente HTTP centralizado (Axios)
+- `assets/`, `index.css`: recursos e estilos
+- `vite.config.ts`, `tsconfig.*`: configuração de build e TypeScript
 
-## React Compiler
+## Scripts do Projeto
+- `npm run dev`: inicia o servidor de desenvolvimento (HMR)
+- `npm run build`: compila TypeScript e gera a pasta `dist`
+- `npm run preview`: serve o build gerado para validação
+- `npm run lint`: verifica padrões de código (ESLint)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Como Executar
+Pré-requisitos: Node.js 18+ e npm (ou PNPM/Yarn, se preferir).
+1. Instalação: `npm install`
+2. Desenvolvimento: `npm run dev` (abra a URL exibida no terminal)
+3. Build: `npm run build` (gera `dist/`)
+4. Preview do build: `npm run preview`
 
-## Expanding the ESLint configuration
+## Autenticação e Rotas
+- `AuthProvider` expõe estado do usuário e token via contexto.
+- `PrivateRoute` restringe acesso a rotas que exigem login.
+- `jwt-decode` auxilia na leitura de claims do token.
+- Defina suas rotas no `App.tsx` e utilize `PrivateRoute` onde necessário.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Consumo de API
+- `src/api/api.ts` centraliza a configuração do Axios (baseURL, headers, interceptors).
+- Importe funções de API nas páginas para buscar/enviar dados.
+- Configure variáveis de ambiente (ex.: `VITE_API_URL`) em arquivos `.env` (Vite usa prefixo `VITE_`).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Qualidade e Configuração
+- ESLint e plugins garantem boas práticas de hooks e atualização.
+- TypeScript configurado em `tsconfig.app.json` e `tsconfig.node.json`.
+- Priorize tipos fortes, componentes funcionais e hooks.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Deploy
+- O conteúdo de `dist/` pode ser servido em qualquer host estático (Nginx, Apache, Netlify, Vercel, etc.).
+- Use `npm run preview` para validar o build localmente.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Nome do pacote: "foslifehub" (package.json).
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Contribuição
+Crie branches, abra PRs e mantenha o padrão de código e organização.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-# FocusLifeHUbFront
+## Licença
+Defina a licença do projeto (ex.: MIT) conforme necessidade.
